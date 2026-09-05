@@ -115,61 +115,105 @@ Optional: her2_copy_number, cep17_copy_number, her2_ceph_ratio, guideline_year
 
 ## 💻 CLI Quickstart & Usage
 
-### 1. Guided Interactive Mode
+### 1. IHC Interpretation
 ```bash
-python cli.py
+python cli.py ihc --score 2 --percent 30.0
 ```
 
-### 2. Direct Parameterized Evaluation
+### 2. FISH Interpretation
 ```bash
-python cli.py --input data.csv
+python cli.py fish --her2-cn 8.0 --cep17-cn 2.0
+python cli.py fish --her2-cn 3.0 --cep17-cn 1.0 --guideline-year 2018
 ```
 
-### Parameter Reference
-- `--interactive`: Launch guided terminal interactive wizard.
-- `--input <path>`: Evaluate input from JSON or CSV specification.
-- `--json`: Output deterministic structured results in JSON format.
+### 3. Combined Assessment
+```bash
+python cli.py assess --ihc 2 --percent 30.0 --her2-cn 10.0 --cep17-cn 2.0
+```
 
-### Input Data Schema
+### 4. Batch CSV Processing
+```bash
+python cli.py batch -i sample.csv -o results.csv
+```
+
+### 5. Start REST API Server
+```bash
+python cli.py serve --host 0.0.0.0 --port 8000
+```
+
+### Input Data Schema (for batch CSV)
 
 | Field | Description | Requirement |
 |:------|:------------|:------------|
-| `Patient_ID` | Parameter / observation metric | Required |
-| `v1` | Parameter / observation metric | Required |
-| `v2` | Parameter / observation metric | Required |
-| `v3` | Parameter / observation metric | Required |
+| `ihc_score` | IHC score (0, 1, 2, or 3) | Required |
+| `percent_staining` | Percentage of cells with staining (0-100) | Required |
+| `her2_copy_number` | Average HER2 FISH copy number | Optional |
+| `cep17_copy_number` | Average CEP17 copy number | Optional |
+| `her2_ceph_ratio` | Pre-computed HER2/CEP17 ratio | Optional |
+| `guideline_year` | 2007 or 2018 (default: 2018) | Optional |
 
 ---
 
 ## 🛡️ Security & Enterprise Architecture
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, and patient identifiers from outbound audit logs.
+* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation. **Requires `AUDIT_SECRET_KEY` environment variable** - generate with: `python -c "import secrets; print(secrets.token_hex(32))"`
+* **Air-Gapped LLM Reasoning Adapter:** Deterministic mock integration with Zero-PHI protection on all prompts.
+* **FastAPI REST API:** Exposes health, audit, and chat endpoints with PHI protection.
+
+### Environment Variables
+
+| Variable | Required | Description |
+|:---------|:---------|:------------|
+| `AUDIT_SECRET_KEY` | Yes (for agents/API) | HMAC-SHA256 secret key for audit trail. Generate a secure random key. |
+| `MODEL_PROVIDER` | No | LLM provider: `mock` (default), `ollama`, `claude`, `openai` |
 
 ---
 
 ## 🧪 Testing & Verification
 
-Run the automated test suite:
+### Run the automated test suite:
 
 ```bash
 pytest -v
 ```
 
-Execute high-throughput batch simulation benchmarks:
+### Run high-throughput simulation benchmarks:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 1000
+```
+
+### Test CLI commands directly:
+
+```bash
+python cli.py ihc --score 3 --percent 90.0
+python cli.py fish --her2-cn 8.0 --cep17-cn 2.0
+python cli.py assess --ihc 2 --percent 30.0 --her2-cn 10.0 --cep17-cn 2.0
+python cli.py batch -i sample.csv -o results.csv
 ```
 
 ---
 
 ## 🐳 Container Deployment
 
+### Docker
+
 ```bash
+# Generate a secure audit key
+export AUDIT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+
+# Build and run
 docker build -t her2-ihc-fish-algorithm .
-docker run -p 8000:8000 her2-ihc-fish-algorithm
+docker run -e AUDIT_SECRET_KEY=$AUDIT_SECRET_KEY -p 8000:8000 her2-ihc-fish-algorithm
 ```
+
+### Docker Compose
+
+```bash
+# Set your audit key in .env or environment
+export AUDIT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+docker-compose up -d
+```
+
+> **SECURITY NOTE:** Always provide a secure `AUDIT_SECRET_KEY` at runtime. Never hardcode secrets in Docker images or compose files.

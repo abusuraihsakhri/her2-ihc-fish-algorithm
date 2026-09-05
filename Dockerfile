@@ -5,11 +5,15 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# SECURITY: AUDIT_SECRET_KEY must be provided at runtime, not baked into image
+# Generate a secure key: python -c "import secrets; print(secrets.token_hex(32))"
+# Example: docker run -e AUDIT_SECRET_KEY=<your-secure-key> her2-ihc-fish-algorithm
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml .
+COPY requirements.txt* ./
 RUN pip install --no-cache-dir fastapi uvicorn pydantic pytest
 
 COPY . .

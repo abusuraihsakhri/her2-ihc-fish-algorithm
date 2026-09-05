@@ -212,3 +212,51 @@ class TestBatchProcessing:
         assert count == 1
         content = csv_out.read_text(encoding="utf-8")
         assert "Positive" in content  # Group 4 is positive in 2018
+
+
+# ---------------------------------------------------------------------------
+# Edge Case & Boundary Tests
+# ---------------------------------------------------------------------------
+
+class TestEdgeCases:
+
+    def test_fish_boundary_ratio_exactly_2(self):
+        """Ratio exactly 2.0 with HER2 CN >= 4.0 should be Positive."""
+        result = interpret_fish(her2_copy_number=8.0, cep17_copy_number=4.0)
+        assert result["fish_status"] == "Positive"
+        assert result["ratio"] == 2.0
+
+    def test_fish_boundary_her2_cn_exactly_4(self):
+        """HER2 CN exactly 4.0 with ratio >= 2.0 should be Positive."""
+        result = interpret_fish(her2_copy_number=4.0, cep17_copy_number=1.5)
+        assert result["fish_status"] == "Positive"
+
+    def test_fish_boundary_her2_cn_exactly_6(self):
+        """HER2 CN exactly 6.0 with ratio < 2.0 should be Positive (Group 2)."""
+        result = interpret_fish(her2_copy_number=6.0, cep17_copy_number=4.0)
+        assert result["fish_status"] == "Positive"
+        assert result["fish_group"] == "Group 2"
+
+    def test_ihc_percent_staining_boundary_0(self):
+        """IHC with 0% staining should work."""
+        result = interpret_ihc(0, percent_staining=0.0)
+        assert result["her2_status"] == "Negative"
+
+    def test_ihc_percent_staining_boundary_100(self):
+        """IHC with 100% staining should work."""
+        result = interpret_ihc(3, percent_staining=100.0)
+        assert result["her2_status"] == "Positive"
+
+    def test_fish_zero_her2_copy_number(self):
+        """FISH with 0 HER2 copy number should be valid (Negative)."""
+        result = interpret_fish(her2_copy_number=0.0, cep17_copy_number=2.0)
+        assert result["fish_status"] == "Negative"
+
+    def test_assess_her2_with_only_ratio_provided(self):
+        """Assessment with only pre-computed ratio should work."""
+        result = assess_her2_status(
+            ihc_score=2, percent_staining=30.0,
+            her2_copy_number=10.0, cep17_copy_number=2.0,
+            her2_ceph_ratio=5.0
+        )
+        assert result["fish_result"]["ratio"] == 5.0

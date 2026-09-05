@@ -445,6 +445,11 @@ def main(argv=None):
     p_batch.add_argument("-i", "--input", required=True, help="Input CSV path")
     p_batch.add_argument("-o", "--output", default="results.csv", help="Output CSV path")
 
+    # Serve (FastAPI)
+    p_serve = subparsers.add_parser("serve", help="Start FastAPI REST server")
+    p_serve.add_argument("--host", default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
+    p_serve.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
+
     args = parser.parse_args(argv)
 
     if args.command == "ihc":
@@ -483,6 +488,11 @@ def main(argv=None):
     elif args.command == "batch":
         count = process_batch(args.input, args.output)
         print(f"Processed {count} records -> {args.output}")
+
+    elif args.command == "serve":
+        import uvicorn
+        from agents.api import app
+        uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
