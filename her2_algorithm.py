@@ -379,7 +379,7 @@ def main(argv=None):
     p_combined.add_argument("--recount-her2-cn", type=float, default=None)
     p_combined.add_argument("--recount-cep17-cn", type=float, default=None)
     p_combined.add_argument("--guideline-year", type=int, default=2018,
-                            choices=[2007, 2018])
+                            choices=[2018, 2023])
 
     # Batch
     p_batch = subparsers.add_parser("batch", help="Batch process CSV")
@@ -388,7 +388,7 @@ def main(argv=None):
 
     # Serve (FastAPI)
     p_serve = subparsers.add_parser("serve", help="Start FastAPI REST server")
-    p_serve.add_argument("--host", default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
+    p_serve.add_argument("--host", default="127.0.0.1", help="Host to bind (default: localhost; use 0.0.0.0 only behind authentication)")
     p_serve.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
 
     args = parser.parse_args(argv)
