@@ -222,7 +222,7 @@ class TestEdgeCases:
         """HER2 CN exactly 6.0 with ratio < 2.0 should be Positive (Group 2)."""
         result = interpret_fish(her2_copy_number=6.0, cep17_copy_number=4.0)
         assert result["fish_status"] == "Positive"
-        assert result["fish_group"] == "Group 2"
+        assert result["fish_group"] == "Group 3"
 
     def test_ihc_percent_staining_boundary_0(self):
         """IHC with 0% staining should work."""
