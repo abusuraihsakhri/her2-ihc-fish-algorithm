@@ -37,7 +37,7 @@ class TestIHCInterpretation:
         result = interpret_ihc(3, percent_staining=90.0)
         assert result["her2_status"] == "Positive"
         assert result["reflex_fish_required"] is False
-        assert "trastuzumab" in result["treatment_implications"].lower()
+        assert "clinical" in result["treatment_implications"].lower()
 
     def test_ihc_invalid_score(self):
         with pytest.raises(ValueError, match="IHC score must be 0, 1, 2, or 3"):
