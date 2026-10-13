@@ -154,7 +154,7 @@ def interpret_fish(her2_copy_number: float, cep17_copy_number: float,
     her2 = _finite_number(her2_copy_number, "her2_copy_number")
     cep17 = _finite_number(cep17_copy_number, "cep17_copy_number", strictly_positive=True)
     ratio = her2 / cep17 if her2_ceph_ratio is None else _finite_number(her2_ceph_ratio, "her2_ceph_ratio")
-    if her2_ceph_ratio is not None and abs(ratio - her2 / cep17) > 0.1:
+    if her2_ceph_ratio is not None and (abs(ratio - her2 / cep17) > 0.02 or (ratio >= 2) != (her2 / cep17 >= 2)):
         raise ValueError("Provided HER2/CEP17 ratio disagrees with the supplied copy numbers")
     if type(num_cells_counted) is not int or num_cells_counted < 20:
         raise ValueError("num_cells_counted must be an integer >= 20")
@@ -173,7 +173,7 @@ def interpret_fish(her2_copy_number: float, cep17_copy_number: float,
         r_her2 = _finite_number(recount_inputs[0], "recount_her2_copy_number")
         r_cep17 = _finite_number(recount_inputs[1], "recount_cep17_copy_number", strictly_positive=True)
         r_ratio = r_her2 / r_cep17 if recount_ratio is None else _finite_number(recount_ratio, "recount_ratio")
-        if recount_ratio is not None and abs(r_ratio - r_her2 / r_cep17) > 0.1:
+        if recount_ratio is not None and (abs(r_ratio - r_her2 / r_cep17) > 0.02 or (r_ratio >= 2) != (r_her2 / r_cep17 >= 2)):
             raise ValueError("Recount ratio disagrees with recount copy numbers")
         if type(recount_cells_counted) is not int or recount_cells_counted < 20:
             raise ValueError("recount_cells_counted must be an integer >= 20")
@@ -206,9 +206,9 @@ def interpret_fish(her2_copy_number: float, cep17_copy_number: float,
         )
 
     return {
-        "her2_copy_number": round(her2, 2),
-        "cep17_copy_number": round(cep17, 2),
-        "ratio": round(ratio, 3),
+        "her2_copy_number": her2,
+        "cep17_copy_number": cep17,
+        "ratio": ratio,
         "num_cells_counted": num_cells_counted,
         "guideline_year": guideline_year,
         "fish_group": f"Group {group}",
@@ -263,6 +263,8 @@ def assess_her2_status(ihc_score: int, percent_staining: float = 0.0,
         else:
             result["final_status"] = fish["fish_status"]
             result["notes"] = fish["description"]
+            if ihc_score in (0, 1) and fish["fish_group"] == "Group 1":
+                result["notes"] += " Discordant IHC/ISH findings warrant pathology review."
     elif ihc_score == 2:
         result["notes"] = "IHC 2+ is equivocal: reflex ISH is required."
     else:
