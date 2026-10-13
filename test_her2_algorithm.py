@@ -154,7 +154,7 @@ class TestCombinedAssessment:
             her2_copy_number=8.0, cep17_copy_number=2.0
         )
         assert result["final_status"] == "Positive"
-        assert result["method"] == "IHC + FISH"
+        assert result["method"] == "IHC + dual-probe ISH"
 
     def test_treatment_positive(self):
         result = assess_her2_status(ihc_score=3, percent_staining=80.0)
