@@ -357,6 +357,10 @@ def main(argv=None):
                         help="Average CEP17 copy number per cell")
     p_fish.add_argument("--ratio", type=float, default=None,
                         help="HER2/CEP17 ratio (auto-calculated if omitted)")
+    p_fish.add_argument("--ihc", type=int, choices=[0, 1, 2, 3], default=None,
+                        help="Concurrent IHC score for ISH groups 2-4")
+    p_fish.add_argument("--recount-her2-cn", type=float, default=None)
+    p_fish.add_argument("--recount-cep17-cn", type=float, default=None)
     p_fish.add_argument("--guideline-year", type=int, default=2018,
                         choices=[2018, 2023], help="ASCO/CAP guideline year")
 
@@ -372,6 +376,8 @@ def main(argv=None):
                             help="CEP17 copy number (optional)")
     p_combined.add_argument("--ratio", type=float, default=None,
                             help="HER2/CEP17 ratio (optional)")
+    p_combined.add_argument("--recount-her2-cn", type=float, default=None)
+    p_combined.add_argument("--recount-cep17-cn", type=float, default=None)
     p_combined.add_argument("--guideline-year", type=int, default=2018,
                             choices=[2007, 2018])
 
@@ -397,6 +403,9 @@ def main(argv=None):
             cep17_copy_number=args.cep17_cn,
             her2_ceph_ratio=args.ratio,
             guideline_year=args.guideline_year,
+            ihc_score=args.ihc,
+            recount_her2_copy_number=args.recount_her2_cn,
+            recount_cep17_copy_number=args.recount_cep17_cn,
         )
         print(json.dumps(result, indent=2))
 
@@ -408,6 +417,8 @@ def main(argv=None):
             cep17_copy_number=args.cep17_cn,
             her2_ceph_ratio=args.ratio,
             guideline_year=args.guideline_year,
+            recount_her2_copy_number=args.recount_her2_cn,
+            recount_cep17_copy_number=args.recount_cep17_cn,
         )
         # Simplify output (remove nested for CLI readability)
         output = {
