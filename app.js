@@ -55,7 +55,7 @@ function showResult(data) {
   state.className = "result-state " + statusClass;
   state.textContent = final;
   renderText("result-note", data.notes);
-  renderText("result-ihc", data.ihc_result.ihc_score + "+ (" + data.ihc_result.her2_status + ")");
+  renderText("result-ihc", data.ihc_result.ihc_score + (data.ihc_result.ihc_score ? "+" : "") + " (" + data.ihc_result.her2_status + ")");
   renderText("result-group", data.fish_result && data.fish_result.fish_group);
   renderText("result-fish", data.fish_result && data.fish_result.fish_status);
   renderText("result-ratio", data.fish_result && data.fish_result.ratio);
