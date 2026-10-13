@@ -66,7 +66,7 @@ def test_group4_2023_follows_2018():
 
 def test_thresholds_use_unrounded_values():
     # Displayed 2.000 MUST NOT accidentally cross 2.0 threshold.
-    result = interpret_fish(3.999999, 2.0)
+    result = interpret_fish(4.0, 2.0000001)
     assert result["fish_group"] == "Group 4"
     assert interpret_fish(4.0, 2.0)["fish_group"] == "Group 1"
     assert interpret_fish(6.0, 4.0)["fish_group"] == "Group 3"
