@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   her2-ihc-fish-algorithm:
     build: .
@@ -9,7 +7,7 @@ services:
     environment:
       # SECURITY: Set a secure random key in your .env file or deployment environment
       # Generate: python -c "import secrets; print(secrets.token_hex(32))"
-      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:-please-change-this-to-a-secure-random-key}
+      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:?AUDIT_SECRET_KEY must be set for the API}
       - MODEL_PROVIDER=mock
     restart: unless-stopped
     healthcheck:
