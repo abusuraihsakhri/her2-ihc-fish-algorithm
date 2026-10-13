@@ -1,4 +1,6 @@
-Patient_ID,v1,v2,v3
-PT-101,14.5,4.2,1.8
-PT-102,8.0,2.1,0.5
-PT-103,28.4,12.0,5.5
+ihc_score,percent_staining,her2_copy_number,cep17_copy_number,guideline_year
+3,90,,,2023
+2,30,8,2,2023
+2,40,3,1,2023
+2,35,5,3,2023
+0,0,,,2023
