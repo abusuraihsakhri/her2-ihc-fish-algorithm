@@ -26,15 +26,31 @@ jobs:
         python -m pip install --upgrade pip
         pip install fastapi uvicorn pydantic pytest
 
+    - name: Generate ephemeral audit secret for CI
+      run: echo "AUDIT_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" >> "$GITHUB_ENV"
+
+    - name: Check Python syntax and browser JavaScript
+      run: |
+        python -m compileall -q her2_algorithm.py agents tests
+        node --check app.js
+
     - name: Run Pytest Suite
       run: |
         pytest -v
 
-    - name: Security SAST & Zero-PHI Audit
+    - name: Verify HMAC tamper detection and PHI guard
       run: |
-        python -c "
-        from agents.base import PHIGuard, AuditLogger
-        import pytest
-        assert AuditLogger.verify_integrity() is True
-        print('Security & Zero-PHI Audit Passed!')
-        "
+        python - <<'PY'
+        from agents.base import AuditTrail, PHIGuard, SecurityException
+        trail = AuditTrail()
+        trail.log("ci", "testing", "verification", {"status": "PASS"})
+        assert trail.verify_integrity()
+        trail.logs[0]["payload_hash"] = "tampered"
+        assert not trail.verify_integrity()
+        try:
+            PHIGuard.assert_no_phi("Patient MRN-123456")
+        except SecurityException:
+            pass
+        else:
+            raise AssertionError("PHI guard check failed")
+        PY
