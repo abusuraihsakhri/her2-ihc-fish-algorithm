@@ -3,7 +3,7 @@ services:
     build: .
     container_name: her2-ihc-fish-algorithm
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       # SECURITY: Set a secure random key in your .env file or deployment environment
       # Generate: python -c "import secrets; print(secrets.token_hex(32))"
