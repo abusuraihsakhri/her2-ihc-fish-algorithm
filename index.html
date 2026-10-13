@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Educational ASCO/CAP HER2 IHC and dual-probe ISH interpretation tool with local browser execution.">
+  <title>HER2 IHC / ISH Interpreter</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#12233b;background:#f4f7fa;line-height:1.52}
+    *{box-sizing:border-box}body{margin:0}main{max-width:1080px;margin:0 auto;padding:28px 18px 56px}
+    h1{font-size:clamp(1.65rem,3.5vw,2.25rem);line-height:1.2;margin:0 0 8px}h2{font-size:1.08rem;margin:0 0 16px}
+    .lead{color:#41566c;margin:0 0 20px;max-width:70ch}.eyebrow{font-weight:700;font-size:.73rem;letter-spacing:.08em;text-transform:uppercase;color:#195c89}
+    .panel{background:#fff;border:1px solid #d9e2ea;border-radius:12px;padding:22px;box-shadow:0 2px 7px #102d4910}
+    .layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}label{display:block;font-weight:600;font-size:.84rem;margin:0 0 5px}
+    input,select{display:block;width:100%;min-height:42px;padding:9px 11px;border:1px solid #a9b9c8;border-radius:7px;font:inherit;background:#fff;color:inherit}
+    input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #6aade8;outline-offset:2px}
+    .field{min-width:0}.fieldset{border:1px solid #d6e0e9;border-radius:8px;padding:16px;margin:18px 0 0}
+    legend{font-weight:700;font-size:.92rem;padding:0 6px}.muted,.help{color:#52687d;font-size:.84rem}
+    .help{margin:4px 0 0}.actions{display:flex;gap:10px;margin:18px 0 0;flex-wrap:wrap}
+    button{font:inherit;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:700;border:1px solid #9bb0c4;background:white;color:#123d61}
+    button.primary{background:#1767a7;color:white;border-color:#1767a7}button:hover:not(:disabled){filter:brightness(.94)}
+    button:disabled{opacity:.55;cursor:not-allowed}.status{font-size:.9rem;font-weight:600;color:#315873;min-height:1.4em}
+    .result-state{font-size:1.5rem;font-weight:750;margin:12px 0}.result-state.positive{color:#a3322b}
+    .result-state.negative{color:#17643b}.result-state.pending{color:#965d0d}
+    .summary{font-weight:600;margin:0 0 8px}.result-list{display:grid;grid-template-columns:125px 1fr;gap:8px 10px;margin:16px 0 0}
+    dt{font-weight:700;color:#3f576d}dd{margin:0;overflow-wrap:anywhere}
+    .notice{border-left:4px solid #cc8720;background:#fff8e9;padding:12px 16px;border-radius:5px;margin:20px 0;font-size:.9rem}
+    .error{color:#a12e25;font-weight:600;min-height:1.4em}.small{font-size:.8rem;color:#516779}
+    .divider{border:0;border-top:1px solid #dae3ec;margin:20px 0}a{color:#155c96}
+    @media(max-width:760px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.panel{padding:16px}main{padding:20px 12px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Breast pathology · educational reference</div>
+  <h1>HER2 IHC / dual-probe ISH interpreter</h1>
+  <p class="lead">Apply the ASCO/CAP 2018 algorithm, reaffirmed in 2023, to a pathologist-assigned IHC score and optional HER2/CEP17 signal counts. The Python algorithm runs locally inside your browser.</p>
+  <div class="notice"><strong>Not a clinical diagnostic system.</strong> Independent pathology review, assay quality control and adjudication are required. Do not enter patient identifiers. HER2 status alone does not determine drug eligibility.</div>
+  <div class="layout">
+    <section class="panel" aria-labelledby="input-title">
+      <h2 id="input-title">Case measurements</h2>
+      <form id="case-form">
+        <div class="grid">
+          <div class="field"><label for="ihc">Pathologist-assigned IHC score</label><select id="ihc" name="ihc_score" required><option value="0">0</option><option value="1">1+</option><option value="2" selected>2+ (equivocal)</option><option value="3">3+ (positive)</option></select></div>
+          <div class="field"><label for="percent">Membrane staining (%)</label><input id="percent" name="percent_staining" type="number" min="0" max="100" step="any" value="30" required><p class="help">Descriptive input; does not calculate the IHC score.</p></div>
+        </div>
+        <fieldset class="fieldset">
+          <legend>Dual-probe ISH (optional)</legend>
+          <p class="help">Enter both means from at least 20 invasive tumor nuclei, or leave both blank to report IHC only.</p>
+          <div class="grid" style="margin-top:12px">
+            <div class="field"><label for="her2">Mean HER2 signals/cell</label><input id="her2" name="her2_copy_number" type="number" min="0" step="any" value="5"></div>
+            <div class="field"><label for="cep17">Mean CEP17 signals/cell</label><input id="cep17" name="cep17_copy_number" type="number" min="0.000001" step="any" value="3"></div>
+          </div>
+          <p class="help">The ratio is calculated without rounding before classification.</p>
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend>Independent blinded recount (when indicated)</legend>
+          <p class="help">For IHC 2+ with ISH group 2, 3 or 4, use measurements from a second blinded observer (at least 20 additional nuclei).</p>
+          <div class="grid" style="margin-top:12px">
+            <div class="field"><label for="recount-her2">Recount mean HER2 signals/cell</label><input id="recount-her2" name="recount_her2_copy_number" type="number" min="0" step="any" placeholder="Optional"></div>
+            <div class="field"><label for="recount-cep17">Recount mean CEP17 signals/cell</label><input id="recount-cep17" name="recount_cep17_copy_number" type="number" min="0.000001" step="any" placeholder="Optional"></div>
+          </div>
+        </fieldset>
+        <div class="actions">
+          <button class="primary" id="calculate" type="submit" disabled>Interpret result</button>
+          <button type="reset">Reset</button>
+        </div>
+      </form>
+    </section>
+    <section class="panel" aria-labelledby="output-title">
+      <h2 id="output-title">Interpretation</h2>
+      <p id="runtime-status" class="status" role="status" aria-live="polite">Loading local Python runtime…</p>
+      <p id="error" class="error" role="alert"></p>
+      <div id="result" hidden aria-live="polite">
+        <div class="eyebrow">Final assessment</div>
+        <div id="result-status" class="result-state"></div>
+        <p id="result-note" class="summary"></p>
+        <hr class="divider">
+        <dl class="result-list">
+          <dt>IHC</dt><dd id="result-ihc"></dd>
+          <dt>ISH group</dt><dd id="result-group"></dd>
+          <dt>ISH status</dt><dd id="result-fish"></dd>
+          <dt>HER2/CEP17</dt><dd id="result-ratio"></dd>
+          <dt>Method</dt><dd id="result-method"></dd>
+        </dl>
+        <p class="small" style="margin-top:20px">Interpretive result only. No clinical treatment selection or stored patient record.</p>
+        <div class="actions"><button type="button" id="export">Download JSON result</button></div>
+      </div>
+      <p id="empty" class="muted">Complete the inputs and select Interpret result. Groups 2–4 are not assigned a definitive status without the required IHC and, when applicable, recount assessment.</p>
+    </section>
+  </div>
+  <p class="small" style="margin-top:18px"><strong>Privacy:</strong> Measurements are evaluated in memory. No form values are sent to an application server, saved, or logged. The runtime is downloaded from a third-party CDN when loaded. <strong>Guidance:</strong> <a href="https://www.cap.org/cap-guidelines/her2-testing-in-breast-cancer-2023-guideline-update/" rel="noopener noreferrer" target="_blank">CAP HER2 Testing 2023</a> · <a href="https://github.com/abusuraihsakhri/her2-ihc-fish-algorithm" rel="noopener noreferrer" target="_blank">Source repository</a>.</p>
+</main>
+</body>
+</html>

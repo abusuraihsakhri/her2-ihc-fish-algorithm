@@ -2,12 +2,13 @@
 Distributed Component High-Throughput Traffic & Stress Testing Simulator for Her2 Ihc Fish Algorithm.
 """
 import os
+import secrets
 import time
 import random
 import sys
 
 # Set default audit key for simulator if not already set
-os.environ.setdefault("AUDIT_SECRET_KEY", "her2-simulator-default-key-change-in-production")
+os.environ.setdefault("AUDIT_SECRET_KEY", secrets.token_hex(32))
 
 from agents.models import SystemTaskPayload
 from agents.supervisor import SystemSupervisor

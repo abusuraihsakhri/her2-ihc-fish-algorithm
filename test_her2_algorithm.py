@@ -37,7 +37,7 @@ class TestIHCInterpretation:
         result = interpret_ihc(3, percent_staining=90.0)
         assert result["her2_status"] == "Positive"
         assert result["reflex_fish_required"] is False
-        assert "trastuzumab" in result["treatment_implications"].lower()
+        assert "clinical" in result["treatment_implications"].lower()
 
     def test_ihc_invalid_score(self):
         with pytest.raises(ValueError, match="IHC score must be 0, 1, 2, or 3"):
@@ -49,7 +49,7 @@ class TestIHCInterpretation:
 
     def test_ihc_3_treatment_implications(self):
         result = interpret_ihc(3, percent_staining=80.0)
-        assert "T-DXd" in result["treatment_implications"]
+        assert "clinical" in result["treatment_implications"].lower()
 
 
 # ---------------------------------------------------------------------------
@@ -65,45 +65,34 @@ class TestFISHInterpretation:
         assert result["fish_group"] == "Group 1"
         assert result["ratio"] == 4.0
 
-    def test_fish_positive_group4_2018(self):
-        """Ratio >=2.0 AND HER2 CN <4.0 -> Positive per 2018 (Group 4)."""
-        result = interpret_fish(her2_copy_number=3.0, cep17_copy_number=1.0,
-                                guideline_year=2018)
-        assert result["fish_status"] == "Positive"
-        assert "Group 4" in result["fish_group"]
-
-    def test_fish_equivocal_group4_2007(self):
-        """Same as above but 2007 guidelines -> Equivocal."""
-        result = interpret_fish(her2_copy_number=3.0, cep17_copy_number=1.0,
-                                guideline_year=2007)
-        assert result["fish_status"] == "Equivocal"
-        assert "2007" in result["fish_group"]
-
-    def test_fish_positive_group2(self):
-        """Ratio <2.0 AND HER2 CN >=6.0 -> Positive (Group 2)."""
-        result = interpret_fish(her2_copy_number=7.0, cep17_copy_number=4.0)
-        assert result["fish_status"] == "Positive"
+    def test_group2_without_ihc_needs_ihc(self):
+        result = interpret_fish(3.0, 1.0, guideline_year=2018)
         assert result["fish_group"] == "Group 2"
-        assert result["ratio"] < 2.0
+        assert result["fish_status"] == "Pending IHC"
 
-    def test_fish_negative_group5_2018(self):
-        """Ratio <2.0 AND HER2 CN 4.0-5.9 -> Negative per 2018 (Group 5)."""
-        result = interpret_fish(her2_copy_number=5.0, cep17_copy_number=3.0,
-                                guideline_year=2018)
-        assert result["fish_status"] == "Negative"
-        assert "Group 5" in result["fish_group"]
+    def test_legacy_2007_not_supported(self):
+        with pytest.raises(ValueError, match="2018/2023"):
+            interpret_fish(3.0, 1.0, guideline_year=2007)
 
-    def test_fish_equivocal_group5_2007(self):
-        """Same as above but 2007 -> Equivocal."""
-        result = interpret_fish(her2_copy_number=5.0, cep17_copy_number=3.0,
-                                guideline_year=2007)
-        assert result["fish_status"] == "Equivocal"
-
-    def test_fish_negative_group3(self):
-        """Ratio <2.0 AND HER2 CN <4.0 -> Negative (Group 3)."""
-        result = interpret_fish(her2_copy_number=2.0, cep17_copy_number=2.0)
-        assert result["fish_status"] == "Negative"
+    def test_group3_without_ihc_needs_ihc(self):
+        result = interpret_fish(7.0, 4.0)
         assert result["fish_group"] == "Group 3"
+        assert result["fish_status"] == "Pending IHC"
+
+    def test_group4_without_ihc_needs_ihc(self):
+        result = interpret_fish(5.0, 3.0, guideline_year=2018)
+        assert result["fish_group"] == "Group 4"
+        assert result["fish_status"] == "Pending IHC"
+
+    def test_group4_ihc2_recount_negative(self):
+        result = interpret_fish(5.0, 3.0, ihc_score=2,
+                                recount_her2_copy_number=5.1, recount_cep17_copy_number=3.1)
+        assert result["fish_status"] == "Negative"
+
+    def test_group5_negative(self):
+        result = interpret_fish(2.0, 2.0)
+        assert result["fish_group"] == "Group 5"
+        assert result["fish_status"] == "Negative"
 
     def test_fish_ratio_auto_calculated(self):
         """Ratio should be auto-calculated when not provided."""
@@ -129,7 +118,7 @@ class TestCombinedAssessment:
         result = assess_her2_status(ihc_score=0, percent_staining=5.0)
         assert result["final_status"] == "Negative"
         assert result["fish_result"] is None
-        assert "definitive" in result["notes"].lower()
+        assert "without dual-probe" in result["notes"].lower()
 
     def test_ihc_3_no_fish_needed(self):
         result = assess_her2_status(ihc_score=3, percent_staining=90.0)
@@ -143,7 +132,7 @@ class TestCombinedAssessment:
         )
         assert result["final_status"] == "Positive"
         assert result["fish_result"]["fish_status"] == "Positive"
-        assert result["method"] == "IHC + FISH"
+        assert result["method"] == "IHC + dual-probe ISH"
 
     def test_ihc_2_with_fish_negative(self):
         result = assess_her2_status(
@@ -157,7 +146,7 @@ class TestCombinedAssessment:
         result = assess_her2_status(ihc_score=2, percent_staining=25.0)
         assert result["final_status"] == "Equivocal"
         assert result["fish_result"] is None
-        assert "REQUIRED" in result["notes"]
+        assert "required" in result["notes"]
 
     def test_ihc_1_with_fish(self):
         result = assess_her2_status(
@@ -165,17 +154,15 @@ class TestCombinedAssessment:
             her2_copy_number=8.0, cep17_copy_number=2.0
         )
         assert result["final_status"] == "Positive"
-        assert result["method"] == "IHC + FISH"
+        assert result["method"] == "IHC + dual-probe ISH"
 
     def test_treatment_positive(self):
         result = assess_her2_status(ihc_score=3, percent_staining=80.0)
-        recs = result["treatment_recommendations"]
-        assert recs["trastuzumab"] == "Indicated (Herceptin)"
+        assert "does not establish treatment eligibility" in result["treatment_recommendations"]["note"]
 
     def test_treatment_negative(self):
         result = assess_her2_status(ihc_score=0, percent_staining=0.0)
-        recs = result["treatment_recommendations"]
-        assert recs["trastuzumab"] == "NOT indicated"
+        assert "does not establish treatment eligibility" in result["treatment_recommendations"]["note"]
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +198,7 @@ class TestBatchProcessing:
         count = process_batch(str(csv_in), str(csv_out))
         assert count == 1
         content = csv_out.read_text(encoding="utf-8")
-        assert "Positive" in content  # Group 4 is positive in 2018
+        assert "Pending recount" in content  # Group 2 with IHC 2+ requires blinded recount
 
 
 # ---------------------------------------------------------------------------
@@ -232,10 +219,10 @@ class TestEdgeCases:
         assert result["fish_status"] == "Positive"
 
     def test_fish_boundary_her2_cn_exactly_6(self):
-        """HER2 CN exactly 6.0 with ratio < 2.0 should be Positive (Group 2)."""
+        """Ratio <2.0 and HER2 CN =6.0 is group 3, requiring IHC assessment."""
         result = interpret_fish(her2_copy_number=6.0, cep17_copy_number=4.0)
-        assert result["fish_status"] == "Positive"
-        assert result["fish_group"] == "Group 2"
+        assert result["fish_group"] == "Group 3"
+        assert result["fish_status"] == "Pending IHC"
 
     def test_ihc_percent_staining_boundary_0(self):
         """IHC with 0% staining should work."""

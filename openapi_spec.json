@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Her2 Ihc Fish Algorithm API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
+    "description": "HER2 IHC and dual-probe ISH educational interpretation API; includes optional, nonclinical audit demonstration endpoints.",
     "version": "3.0.0-ENTERPRISE",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
@@ -22,10 +22,10 @@
     },
     "/metrics": {
       "get": {
-        "summary": "Prometheus operational metrics",
+        "summary": "JSON counters for the nonclinical audit demonstration",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "JSON audit counters"
           }
         }
       }
@@ -76,7 +76,7 @@
     },
     "/api/chat": {
       "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
+        "summary": "Deterministic demonstration chat (not a clinical language-model service)",
         "requestBody": {
           "content": {
             "application/json": {
@@ -107,6 +107,72 @@
         "responses": {
           "200": {
             "description": "Cryptographic audit trail"
+          }
+        }
+      }
+    },
+    "/api/her2": {
+      "post": {
+        "summary": "Interpret HER2 IHC and dual-probe ISH (ASCO/CAP 2018 reaffirmed 2023)",
+        "description": "Groups 2-4 may require IHC/recount; no clinical treatment recommendation is supplied.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ihc_score": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3
+                  },
+                  "percent_staining": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "her2_copy_number": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "cep17_copy_number": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "her2_ceph_ratio": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "guideline_year": {
+                    "type": "integer",
+                    "enum": [
+                      2018,
+                      2023
+                    ]
+                  },
+                  "recount_her2_copy_number": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "recount_cep17_copy_number": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "ihc_score"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "IHC/ISH assessment with pending-state safety checks"
+          },
+          "422": {
+            "description": "Input validation error"
           }
         }
       }
